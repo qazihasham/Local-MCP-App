@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Bridge Desktop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.5/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #1F1B26;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .titlebar {
+            height: 40px;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            -webkit-app-region: drag;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .titlebar h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .server-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-input {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            width: 80px;
+        }
+
+        .control-input.wide {
+            width: 120px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        .restart-server-btn {
+            padding: 6px 12px;
+            background: #ff983d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .restart-server-btn:hover {
+            transform: scale(1.05);
+            background: #e5822a;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .sidebar-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .servers-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .servers-section-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .servers-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #e0e0e0;
+        }
+
+        .servers-refresh-btn {
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #69bafc;
+            border: 1px solid rgba(105, 186, 252, 0.3);
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 11px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .servers-refresh-btn:hover {
+            background: rgba(105, 186, 252, 0.1);
+            border-color: #69bafc;
+        }
+
+        .add-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .add-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .add-server-btn {
+            background: #2848a0;
+        }
+
+        .add-json-btn {
+            background: #005ccc;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .servers-list {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .server-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .server-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .server-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .server-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #8b8bfa;
+        }
+
+        .server-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 4px;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .server-command {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: #888;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+            word-break: break-all;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 12px;
+        }
+
+        .server-controls-mini {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mini-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .tool-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .tool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .tool-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #69bafc;
+        }
+
+        .tool-server {
+            font-size: 12px;
+            color: #888;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .tool-description {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            width: 600px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 24px;
+            padding: 4px;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #ddd;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #69bafc;
+            box-shadow: 0 0 0 2px rgba(105, 186, 252, 0.2);
+        }
+
+        .form-textarea {
+            min-height: 150px;
+            resize: vertical;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: #69bafc;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .error-message {
+            color: #ff4444;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .success-message {
+            color: #69bafc;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .parsed-servers {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .parsed-server {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .parsed-server:last-child {
+            margin-bottom: 0;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #69bafc;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .logs-section {
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logs-header {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #69bafc;
+        }
+
+        .logs-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+
+        .log-entry {
+            margin-bottom: 6px;
+            word-wrap: break-word;
+        }
+
+        .log-entry.info {
+            color: #69bafc;
+        }
+
+        .log-entry.warning {
+            color: #ff983d;
+        }
+
+        .log-entry.error {
+            color: #ff4444;
+        }
+
+        .toast {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px 20px;
+            color: white;
+            z-index: 2000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid #69bafc;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ff4444;
+        }
+
+        .tools-by-server {
+            margin-bottom: 40px;
+        }
+
+        .server-tools-header {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .server-tools-header:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .server-tools-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #8b8bfa;
+        }
+
+        .tools-count {
+            font-size: 14px;
+            color: #888;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        .collapse-indicator {
+            font-size: 12px;
+            color: #888;
+            transition: transform 0.2s ease;
+        }
+
+        .collapse-indicator.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .start-btn {
+            background: #00ff88;
+            color: #000;
+        }
+
+        .stop-btn {
+            background: #ff4444;
+            color: white;
+        }
+
+        .starting-btn {
+            background: #ff983d;
+            color: white;
+        }
+
+        .version-label {
+            font-size: 0.7em;
+            color: gray;
+            margin-left: 4px;
+        }
+
+
+        .status-running { background: #00ff88; }
+        .status-starting { background: #ff983d; }
+        .status-stopped { background: #888; }
+        .status-error { background: #ff4444; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { createRoot } = ReactDOM;
+
+        const API_BASE = 'http://127.0.0.1:8765';
+
+        function Toast({ message, type, onClose }) {
+            useEffect(() => {
+                const timer = setTimeout(onClose, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            return (
+                <div className={`toast ${type} show`}>
+                    {message}
+                </div>
+            );
+        }
+
+        function LogsSection() {
+            const [logs, setLogs] = useState([]);
+            const logsEndRef = useRef(null);
+
+            useEffect(() => {
+                // Simulate log entries - in real implementation, these would come from WebSocket or polling
+                const initialLogs = [
+                    { timestamp: new Date().toISOString(), level: 'info', message: 'MCP Bridge Desktop started' },
+                    { timestamp: new Date().toISOString(), level: 'info', message: 'Management UI: http://127.0.0.1:8765' },
+                    { timestamp: new Date().toISOString(), level: 'info', message: 'SSE Server: http://localhost:30001/sse' }
+                ];
+                setLogs(initialLogs);
+
+                // Simulate real-time logs
+                const interval = setInterval(() => {
+                    if (Math.random() > 0.7) {
+                        const messages = [
+                            'Server heartbeat check completed',
+                            'Tools discovery completed',
+                            'Configuration updated',
+                            'Server status refreshed'
+                        ];
+                        const newLog = {
+                            timestamp: new Date().toISOString(),
+                            level: Math.random() > 0.8 ? 'warning' : 'info',
+                            message: messages[Math.floor(Math.random() * messages.length)]
+                        };
+                        setLogs(prev => [...prev.slice(-30), newLog]); // Keep last 30 logs
+                    }
+                }, 5000);
+
+                return () => clearInterval(interval);
+            }, []);
+
+            useEffect(() => {
+                logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [logs]);
+
+            return (
+                <div className="logs-section">
+                    <div className="logs-header">System Logs</div>
+                    <div className="logs-container">
+                        {logs.map((log, index) => (
+                            <div key={index} className={`log-entry ${log.level}`}>
+                                <span style={{ color: '#666', marginRight: '6px' }}>
+                                    {new Date(log.timestamp).toLocaleTimeString()}
+                                </span>
+                                {log.message}
+                            </div>
+                        ))}
+                        <div ref={logsEndRef} />
+                    </div>
+                </div>
+            );
+        }
+
+        function AddJSONModal({ isOpen, onClose, onAdd }) {
+            const [jsonContent, setJsonContent] = useState('');
+            const [parsedServers, setParsedServers] = useState([]);
+            const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+
+            const handleParse = async () => {
+                if (!jsonContent.trim()) return;
+                
+                setIsLoading(true);
+                setError('');
+                
+                try {
+                    const response = await fetch(`${API_BASE}/api/servers/parse`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ json_content: jsonContent })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        setParsedServers(data.servers);
+                    } else {
+                        const errorData = await response.json();
+                        setError(errorData.detail || 'Failed to parse JSON');
+                    }
+                } catch (err) {
+                    setError('Failed to parse JSON: ' + err.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleAddServers = async () => {
+                for (const server of parsedServers) {
+                    try {
+                        await fetch(`${API_BASE}/api/servers`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(server)
+                        });
+                    } catch (err) {
+                        console.error(`Failed to add server ${server.name}:`, err);
+                    }
+                }
+                
+                onAdd(parsedServers.length);
+                setJsonContent('');
+                setParsedServers([]);
+                setError('');
+            };
+
+            const handleClose = () => {
+                setJsonContent('');
+                setParsedServers([]);
+                setError('');
+                onClose();
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="modal">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h3 className="modal-title">Add MCP Servers from JSON</h3>
+                            <button className="close-btn" onClick={handleClose}>×</button>
+                        </div>
+                        
+                        <div className="form-group">
+                            <label className="form-label">Paste MCP Configuration JSON</label>
+                            <textarea
+                                className="form-input form-textarea"
+                                value={jsonContent}
+                                onChange={(e) => setJsonContent(e.target.value)}
+                                placeholder={`{
+  "mcpServers": {
+    "pinecone": {
+      "command": "npx",
+      "args": ["-y", "@pinecone-database/mcp"],
+      "env": {
+        "PINECONE_API_KEY": "your-key"
+      }
+    }
+  }
+}`}
+                            />
+                            {error && <div className="error-message">{error}</div>}
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                            <button 
+                                type="button" 
+                                className="submit-btn" 
+                                onClick={handleParse}
+                                disabled={isLoading || !jsonContent.trim()}
+                                style={{ flex: 1 }}
+                            >
+                                {isLoading ? <div className="loading"></div> : 'Parse JSON'}
+                            </button>
+                        </div>
+
+                        {parsedServers.length > 0 && (
+                            <div className="parsed-servers">
+                                <h4 style={{ marginBottom: '15px', color: '#69bafc' }}>
+                                    Found {parsedServers.length} server(s):
+                                </h4>
+                                {parsedServers.map((server, index) => (
+                                    <div key={index} className="parsed-server">
+                                        <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+                                            {server.name}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#888', fontFamily: 'monospace' }}>
+                                            {server.command} {server.args.join(' ')}
+                                        </div>
+                                    </div>
+                                ))}
+                                
+                                <button 
+                                    className="submit-btn" 
+                                    onClick={handleAddServers}
+                                    style={{ marginTop: '15px' }}
+                                >
+                                    Add All Servers
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function AddServerModal({ isOpen, onClose, onAdd, editServer = null }) {
+            const [formData, setFormData] = useState({
+                name: '',
+                command: '',
+                args: '',
+                env: '',
+                cwd: ''
+            });
+
+            useEffect(() => {
+                if (editServer) {
+                    setFormData({
+                        name: editServer.name,
+                        command: editServer.command,
+                        args: editServer.args.join(' '),
+                        env: JSON.stringify(editServer.env, null, 2),
+                        cwd: editServer.cwd || ''
+                    });
+                } else {
+                    setFormData({ name: '', command: '', args: '', env: '', cwd: '' });
+                }
+            }, [editServer, isOpen]);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    const config = {
+                        name: formData.name,
+                        command: formData.command,
+                        args: formData.args.split(' ').filter(arg => arg.trim()),
+                        env: formData.env ? JSON.parse(formData.env) : {},
+                        cwd: formData.cwd || null
+                    };
+                    
+                    const url = editServer 
+                        ? `${API_BASE}/api/servers/${editServer.name}`
+                        : `${API_BASE}/api/servers`;
+                    const method = editServer ? 'PUT' : 'POST';
+                    
+                    const response = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    });
+                    
+                    if (response.ok) {
+                        onAdd();
+                        setFormData({ name: '', command: '', args: '', env: '', cwd: '' });
+                    } else {
+                        const error = await response.json();
+                        alert(error.detail || 'Failed to save server');
+                    }
+                } catch (error) {
+                    alert('Invalid JSON in environment variables or other error');
+                }
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="modal">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h3 className="modal-title">
+                                {editServer ? 'Edit MCP Server' : 'Add MCP Server'}
+                            </h3>
+                            <button className="close-btn" onClick={onClose}>×</button>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <label className="form-label">Server Name</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Command</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.command}
+                                    onChange={(e) => setFormData({...formData, command: e.target.value})}
+                                    placeholder="npx"
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Arguments (space-separated)</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.args}
+                                    onChange={(e) => setFormData({...formData, args: e.target.value})}
+                                    placeholder="-y @pinecone-database/mcp"
+                                    required
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Working Directory (optional)</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.cwd}
+                                    onChange={(e) => setFormData({...formData, cwd: e.target.value})}
+                                    placeholder="/path/to/directory"
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label className="form-label">Environment Variables (JSON)</label>
+                                <textarea
+                                    className="form-input form-textarea"
+                                    value={formData.env}
+                                    onChange={(e) => setFormData({...formData, env: e.target.value})}
+                                    placeholder='{"PINECONE_API_KEY": "your-key-here"}'
+                                />
+                            </div>
+                            
+                            <button type="submit" className="submit-btn">
+                                {editServer ? 'Update Server' : 'Add Server'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        function ServerItem({ server, onStart, onStop, onDelete, onEdit, startingServers, toolsByServer }) {
+            const { config, status } = server;
+            const isStarting = startingServers.includes(config.name);
+            const toolsCount = toolsByServer[config.name]?.length || 0;
+
+            const getStatusInfo = () => {
+                if (isStarting) return { status: 'starting', class: 'status-starting' };
+                return { status: status.status, class: `status-${status.status}` };
+            };
+
+            const statusInfo = getStatusInfo();
+
+            return (
+                <div className="server-item">
+                    <div className="server-header">
+                        <div className="server-name">{config.name}</div>
+                        <div className="server-actions">
+                            <button 
+                                className="icon-btn"
+                                onClick={() => onEdit(config)}
+                                title="Edit Server"
+                            >
+                                ✏️
+                            </button>
+                            <button 
+                                className="icon-btn"
+                                onClick={() => onDelete(config.name)}
+                                title="Delete Server"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="server-command">
+                        {config.command} {config.args.join(' ')}
+                    </div>
+                    
+                    <div className="server-status">
+                        <div className="status-indicator">
+                            <div className={`status-dot ${statusInfo.class}`}></div>
+                            <span>{statusInfo.status}</span>
+                            {status.pid && <span style={{fontSize: '11px', color: '#666'}}>PID: {status.pid}</span>}
+                        </div>
+                        
+                        <div className="server-controls-mini">
+                            {(status.status === 'stopped' && !isStarting) && (
+                                <button 
+                                    className="mini-btn start-btn"
+                                    onClick={() => onStart(config.name)}
+                                >
+                                    Start
+                                </button>
+                            )}
+                            {isStarting && (
+                                <button 
+                                    className="mini-btn starting-btn"
+                                    disabled
+                                >
+                                    Starting...
+                                </button>
+                            )}
+                            {(status.status === 'running' && !isStarting) && (
+                                <button 
+                                    className="mini-btn stop-btn"
+                                    onClick={() => onStop(config.name)}
+                                >
+                                    Stop
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
+                        Tools: {toolsCount}
+                        {status.error_message && (
+                            <div style={{ color: '#ff4444', marginTop: '4px' }}>
+                                Error: {status.error_message}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function ToolCard({ tool }) {
+            return (
+                <div className="tool-card">
+                    <div className="tool-header">
+                        <div className="tool-name">{tool.name}</div>
+                        <div className="tool-server">{tool.server}</div>
+                    </div>
+                    
+                    <div className="tool-description">
+                        {tool.description || 'No description available'}
+                    </div>
+                    
+                    {tool.inputSchema?.properties && (
+                        <div style={{ marginBottom: '15px' }}>
+                            <strong style={{ fontSize: '14px', color: '#ddd' }}>Parameters:</strong>
+                            {Object.entries(tool.inputSchema.properties).map(([name, param]) => (
+                                <div key={name} style={{ 
+                                    fontSize: '12px', 
+                                    color: '#aaa', 
+                                    marginTop: '4px',
+                                    paddingLeft: '8px'
+                                }}>
+                                    <span style={{ color: '#69bafc', fontWeight: '500' }}>{name}</span>: {param.description || param.type}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function App() {
+            const [servers, setServers] = useState([]);
+            const [tools, setTools] = useState([]);
+            const [settings, setSettings] = useState({
+                host: 'localhost',
+                port: 30001,
+                sse_path: '/sse',
+                auto_start: false
+            });
+            const [tempSettings, setTempSettings] = useState({});
+            const [isServerRunning, setIsServerRunning] = useState(false);
+            const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+            const [isAddJSONModalOpen, setIsAddJSONModalOpen] = useState(false);
+            const [editingServer, setEditingServer] = useState(null);
+            const [toast, setToast] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [startingServers, setStartingServers] = useState([]);
+            const [collapsedServers, setCollapsedServers] = useState(new Set());
+
+            const showToast = (message, type = 'success') => {
+                setToast({ message, type });
+            };
+
+            const hideToast = () => {
+                setToast(null);
+            };
+
+            const fetchSettings = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/settings`);
+                    const data = await response.json();
+                    setSettings(data);
+                    setTempSettings(data);
+                } catch (error) {
+                    console.error('Failed to fetch settings:', error);
+                }
+            };
+
+            const restartServer = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/settings`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(tempSettings)
+                    });
+                    
+                    if (response.ok) {
+                        setSettings(tempSettings);
+                        showToast('Server restarted with new settings');
+                    }
+                } catch (error) {
+                    showToast('Failed to restart server', 'error');
+                }
+            };
+
+            const fetchServers = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/servers`);
+                    const data = await response.json();
+                    setServers(data.servers);
+                } catch (error) {
+                    console.error('Failed to fetch servers:', error);
+                }
+            };
+
+            const fetchTools = async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/tools`);
+                    const data = await response.json();
+                    setTools(data.tools);
+                } catch (error) {
+                    console.error('Failed to fetch tools:', error);
+                }
+            };
+
+            const refreshServers = async () => {
+                showToast('Refreshing servers...');
+                await Promise.all([fetchServers(), fetchTools()]);
+                showToast('Servers refreshed');
+            };
+
+            useEffect(() => {
+                const loadData = async () => {
+                    await Promise.all([fetchSettings(), fetchServers(), fetchTools()]);
+                    setLoading(false);
+                };
+                loadData();
+
+                const interval = setInterval(() => {
+                    fetchServers();
+                    fetchTools();
+                }, 3000);
+
+                return () => clearInterval(interval);
+            }, []);
+
+            const handleStartServer = async (serverName) => {
+                setStartingServers(prev => [...prev, serverName]);
+                
+                try {
+                    const response = await fetch(`${API_BASE}/api/servers/${serverName}/start`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        showToast(`Starting server ${serverName}`);
+                        
+                        // Poll server status until it's running or failed
+                        const pollStatus = async () => {
+                            for (let i = 0; i < 30; i++) { // Poll for up to 30 seconds
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                                
+                                try {
+                                    const statusResponse = await fetch(`${API_BASE}/api/servers`);
+                                    const statusData = await statusResponse.json();
+                                    const server = statusData.servers.find(s => s.config.name === serverName);
+                                    
+                                    if (server && server.status.status === 'running') {
+                                        setStartingServers(prev => prev.filter(name => name !== serverName));
+                                        fetchServers();
+                                        fetchTools();
+                                        return;
+                                    } else if (server && server.status.status === 'error') {
+                                        setStartingServers(prev => prev.filter(name => name !== serverName));
+                                        fetchServers();
+                                        return;
+                                    }
+                                } catch (error) {
+                                    console.error('Error polling server status:', error);
+                                }
+                            }
+                            
+                            // Timeout - remove from starting list
+                            setStartingServers(prev => prev.filter(name => name !== serverName));
+                            fetchServers();
+                        };
+                        
+                        pollStatus();
+                    } else {
+                        setStartingServers(prev => prev.filter(name => name !== serverName));
+                        showToast('Failed to start server', 'error');
+                    }
+                } catch (error) {
+                    setStartingServers(prev => prev.filter(name => name !== serverName));
+                    showToast('Failed to start server', 'error');
+                }
+            };
+
+            const handleStopServer = async (serverName) => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/servers/${serverName}/stop`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        showToast(`Server ${serverName} stopped`);
+                        fetchServers();
+                        fetchTools();
+                    } else {
+                        showToast('Failed to stop server', 'error');
+                    }
+                } catch (error) {
+                    showToast('Failed to stop server', 'error');
+                }
+            };
+
+            const handleDeleteServer = async (serverName) => {
+                if (!confirm(`Are you sure you want to delete server ${serverName}?`)) return;
+                
+                try {
+                    const response = await fetch(`${API_BASE}/api/servers/${serverName}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        showToast(`Server ${serverName} deleted`);
+                        fetchServers();
+                        fetchTools();
+                    } else {
+                        showToast('Failed to delete server', 'error');
+                    }
+                } catch (error) {
+                    showToast('Failed to delete server', 'error');
+                }
+            };
+
+            const handleAddServer = () => {
+                setIsAddModalOpen(false);
+                setEditingServer(null);
+                fetchServers();
+                showToast('Server configuration saved');
+            };
+
+            const handleAddFromJSON = (count) => {
+                setIsAddJSONModalOpen(false);
+                fetchServers();
+                showToast(`Added ${count} server(s) from JSON`);
+            };
+
+            const handleEditServer = (config) => {
+                setEditingServer(config);
+                setIsAddModalOpen(true);
+            };
+
+            const toggleServerCollapse = (serverName) => {
+                setCollapsedServers(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(serverName)) {
+                        newSet.delete(serverName);
+                    } else {
+                        newSet.add(serverName);
+                    }
+                    return newSet;
+                });
+            };
+
+            const runningServers = servers.filter(s => s.status.status === 'running');
+            const toolsByServer = {};
+            
+            tools.forEach(tool => {
+                if (!toolsByServer[tool.server]) {
+                    toolsByServer[tool.server] = [];
+                }
+                toolsByServer[tool.server].push(tool);
+            });
+
+            if (loading) {
+                return (
+                    <div className="app" style={{ alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="loading" style={{ width: '40px', height: '40px' }}></div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app">
+                    
+                    <div className="sidebar">
+                        <div className="sidebar-header">
+                            <h2>MCP Servers <span className="version-label">(v0.10)</span></h2>
+                            <div className="add-buttons">
+                                <button 
+                                    className="add-btn add-server-btn"
+                                    onClick={() => setIsAddModalOpen(true)}
+                                >
+                                    ➕ Add Server
+                                </button>
+                                <button 
+                                    className="add-btn add-json-btn"
+                                    onClick={() => setIsAddJSONModalOpen(true)}
+                                >
+                                    📋 Add from JSON
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="servers-section">
+                            <div className="servers-section-header">
+                                <div className="servers-section-title">Added Servers</div>
+                                <button 
+                                    className="servers-refresh-btn"
+                                    onClick={refreshServers}
+                                >
+                                    🔄 Refresh
+                                </button>
+                            </div>
+                            
+                            <div className="servers-list">
+                                {servers.length === 0 ? (
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">🔧</div>
+                                        <p>No servers configured</p>
+                                        <p>Add servers to get started</p>
+                                    </div>
+                                ) : (
+                                    servers.map(server => (
+                                        <ServerItem
+                                            key={server.config.name}
+                                            server={server}
+                                            onStart={handleStartServer}
+                                            onStop={handleStopServer}
+                                            onDelete={handleDeleteServer}
+                                            onEdit={handleEditServer}
+                                            startingServers={startingServers}
+                                            toolsByServer={toolsByServer}
+                                        />
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="main-content">
+                        <div className="header">
+                            <div className="server-controls">
+                                <div className="control-group">
+                                    <span className="control-label">Host:</span>
+                                    <input
+                                        className="control-input wide"
+                                        value={tempSettings.host || ''}
+                                        onChange={(e) => setTempSettings({...tempSettings, host: e.target.value})}
+                                    />
+                                </div>
+                                <div className="control-group">
+                                    <span className="control-label">Port:</span>
+                                    <input
+                                        className="control-input"
+                                        type="number"
+                                        value={tempSettings.port || ''}
+                                        onChange={(e) => setTempSettings({...tempSettings, port: parseInt(e.target.value)})}
+                                    />
+                                </div>
+                                <div className="control-group">
+                                    <span className="control-label">SSE Path:</span>
+                                    <input
+                                        className="control-input wide"
+                                        value={tempSettings.sse_path || ''}
+                                        onChange={(e) => setTempSettings({...tempSettings, sse_path: e.target.value})}
+                                    />
+                                </div>
+                                <button 
+                                    className="restart-server-btn"
+                                    onClick={restartServer}
+                                >
+                                    Restart Server
+                                </button>
+                                <div className="status-indicator">
+                                    <div className={`status-dot ${runningServers.length > 0 ? 'status-running' : 'status-stopped'}`}></div>
+                                    <span>{runningServers.length} servers running</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="content">
+                            <div className="section-header">
+                                <h2 className="section-title">Available Tools ({tools.length})</h2>
+                            </div>
+                            
+                            {Object.keys(toolsByServer).length === 0 ? (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">🛠️</div>
+                                    <p>No tools available</p>
+                                    <p>Start some MCP servers to see their tools here</p>
+                                </div>
+                            ) : (
+                                Object.entries(toolsByServer).map(([serverName, serverTools]) => (
+                                    <div key={serverName} className="tools-by-server">
+                                        <div 
+                                            className="server-tools-header"
+                                            onClick={() => toggleServerCollapse(serverName)}
+                                        >
+                                            <div className="server-tools-title">{serverName}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div className="tools-count">{serverTools.length} tools</div>
+                                                <div className={`collapse-indicator ${collapsedServers.has(serverName) ? 'collapsed' : ''}`}>
+                                                    ▼
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {!collapsedServers.has(serverName) && (
+                                            <div className="tools-grid">
+                                                {serverTools.map(tool => (
+                                                    <ToolCard
+                                                        key={`${tool.server}-${tool.name}`}
+                                                        tool={tool}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                    
+                    <AddServerModal
+                        isOpen={isAddModalOpen}
+                        onClose={() => {
+                            setIsAddModalOpen(false);
+                            setEditingServer(null);
+                        }}
+                        onAdd={handleAddServer}
+                        editServer={editingServer}
+                    />
+                    
+                    <AddJSONModal
+                        isOpen={isAddJSONModalOpen}
+                        onClose={() => setIsAddJSONModalOpen(false)}
+                        onAdd={handleAddFromJSON}
+                    />
+                    
+                    {toast && (
+                        <Toast
+                            message={toast.message}
+                            type={toast.type}
+                            onClose={hideToast}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

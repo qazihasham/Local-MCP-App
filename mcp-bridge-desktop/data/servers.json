@@ -1,0 +1,43 @@
+{
+  "servers": [
+    {
+      "name": "pinecone",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@pinecone-database/mcp"
+      ],
+      "env": {
+        "PINECONE_API_KEY": "pcsk_4iCTKC_GpgKtHtDjfU6mFrgQgBwR3ZZj27xjxrCQXiHN1Np5qFHqM19fqRzTPFtumZwqHD"
+      },
+      "cwd": null
+    },
+    {
+      "name": "fetch",
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "env": {},
+      "cwd": null
+    },
+    {
+      "name": "tavily",
+      "command": "npx",
+      "args": [
+        "-y",
+        "tavily-mcp@latest"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "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"
+      },
+      "cwd": null
+    }
+  ],
+  "settings": {
+    "host": "localhost",
+    "port": 30001,
+    "sse_path": "/sse",
+    "auto_start": false
+  }
+}
