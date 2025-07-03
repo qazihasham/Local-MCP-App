@@ -20,6 +20,9 @@ from pydantic import BaseModel
 from mcp_bridge import MCPBridge
 from sse_server import create_sse_server
 from mcp.server.fastmcp import FastMCP
+import inspect
+import types
+from typing import get_type_hints
 
 # Configure logging
 logging.basicConfig(
@@ -76,6 +79,66 @@ app_settings = AppSettings()
 sse_mcp_bridge = None
 external_sse_server = None
 
+# Map JSON Schema types to Python types
+JSON_TYPE_MAP = {
+    "string": str,
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "array": list,
+    "object": dict,
+}
+
+def json_schema_to_pytype(schema):
+    """Convert JSON Schema type to Python type."""
+    t = schema.get("type", "string")
+    if isinstance(t, list):
+        # Prefer non-null type if present
+        t = [x for x in t if x != "null"]
+        t = t[0] if t else "string"
+    return JSON_TYPE_MAP.get(t, Any)
+
+def make_tool_function(server_name, tool, execute_mcp_tool):
+    """Dynamically create a function for a tool with correct signature and docstring."""
+    input_schema = tool.get("inputSchema", {})
+    params = input_schema.get("properties", {})
+    required = set(input_schema.get("required", []))
+    param_list = []
+    param_docs = []
+    for name, schema in params.items():
+        pytype = json_schema_to_pytype(schema)
+        default = inspect.Parameter.empty if name in required else schema.get("default", None)
+        param_list.append(inspect.Parameter(
+            name,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            default=default,
+            annotation=pytype
+        ))
+        desc = schema.get("description", "")
+        param_docs.append(f":param {name}: {desc} (type: {pytype.__name__})")
+    # Add **kwargs to absorb extra params if needed
+    param_list.append(inspect.Parameter(
+        "kwargs",
+        inspect.Parameter.VAR_KEYWORD
+    ))
+
+    # Build docstring
+    docstring = tool.get("description", "") + "\n" + "\n".join(param_docs)
+
+    # Function body: calls execute_mcp_tool
+    async def tool_func(*args, **kwargs):
+        # Map args to parameter names
+        bound = inspect.signature(tool_func).bind(*args, **kwargs)
+        bound.apply_defaults()
+        arguments = {k: v for k, v in bound.arguments.items() if k != "kwargs"}
+        arguments.update(kwargs)
+        return await execute_mcp_tool(server_name, tool["name"], arguments)
+
+    tool_func.__name__ = tool["name"]
+    tool_func.__doc__ = docstring
+    tool_func.__signature__ = inspect.Signature(param_list)
+    return tool_func
+
 # SSE MCP Bridge that exposes tools like your original setup
 class SSEMCPBridge:
     """Bridge that exposes stdio MCP tools as SSE MCP server"""
@@ -120,33 +183,24 @@ class SSEMCPBridge:
             return await self.bridge.execute_tool(server_name, tool_name, arguments)
     
     async def update_tools(self):
-        """Update available tools when servers change"""
-        try:
-            all_tools = await self.bridge.get_all_tools()
-            
-            # Register each tool individually (like your @mcp.tool() approach)
-            for tool in all_tools:
-                tool_id = f"{tool['server']}_{tool['name']}"
-                
-                if tool_id not in self.registered_tools:
-                    await self._register_individual_tool(tool)
-                    self.registered_tools[tool_id] = tool
-                    
-            logger.info(f"Updated SSE MCP tools: {len(self.registered_tools)} total tools available")
-                    
-        except Exception as e:
-            logger.error(f"Failed to update tools: {e}")
-    
-    async def _register_individual_tool(self, tool: Dict[str, Any]):
-        """Register an individual tool as a FastMCP tool"""
-        # Skip individual tool registration for now - use the base tools instead
-        # The base tools (list_available_tools, execute_mcp_tool) handle everything
-        server_name = tool['server']
-        tool_name = tool['name']
-        tool_id = f"{server_name}_{tool_name}"
-        
-        logger.info(f"Tool available: {tool_id}")
-        # Individual tool registration disabled - using base tools instead
+        """Dynamically register all tools as native MCP tools."""
+        all_tools = await self.bridge.get_all_tools()
+        for tool in all_tools:
+            server_name = tool["server"]
+            tool_name = tool["name"]
+            tool_id = f"{server_name}_{tool_name}"
+            if tool_id in self.registered_tools:
+                continue
+            # Dynamically create and register the tool
+            tool_func = make_tool_function(server_name, tool, self.bridge.execute_tool)
+            # Register with FastMCP
+            self.mcp.tool(
+                name=tool_name,
+                title=tool.get("title", tool_name),
+                description=tool.get("description", ""),
+                annotations=tool.get("annotations", None)
+            )(tool_func)
+            self.registered_tools[tool_id] = tool_func
     
     def get_app(self) -> FastAPI:
         """Get the FastAPI app with SSE server"""
