@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "Desktop application for managing MCP servers",
   "main": "electron/main.js",
+  "homepage": "./",
+  "author": "Your Name",
   "scripts": {
     "start": "electron .",
     "dev": "concurrently \"python main.py\" \"wait-on http://127.0.0.1:8765 && electron .\"",
@@ -27,50 +29,59 @@
       "templates/**/*",
       "*.py",
       "requirements.txt",
-      "package.json"
+      "package.json",
+      "!node_modules",
+      "!venv",
+      "!python-dist/**/*"
     ],
     "extraResources": [
       {
-        "from": "python-dist",
-        "to": "python",
-        "filter": [
-          "**/*"
-        ]
+        "from": "python-dist/",
+        "to": "python/",
+        "filter": ["**/*"]
       }
     ],
-    "mac": {
-      "category": "public.app-category.developer-tools",
-      "icon": "build/icon.icns",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ]
-    },
     "win": {
-      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MCP Bridge Desktop"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
         }
       ]
     },
     "linux": {
-      "icon": "build/icon.png",
       "category": "Development",
       "target": [
         {
           "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
         }
       ]
     }
