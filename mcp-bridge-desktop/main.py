@@ -193,11 +193,9 @@ class SSEMCPBridge:
                 continue
             # Dynamically create and register the tool
             tool_func = make_tool_function(server_name, tool, self.bridge.execute_tool)
-            # Register with FastMCP
+            # Register with FastMCP (only pass supported args)
             self.mcp.tool(
                 name=tool_name,
-                title=tool.get("title", tool_name),
-                description=tool.get("description", ""),
                 annotations=tool.get("annotations", None)
             )(tool_func)
             self.registered_tools[tool_id] = tool_func
