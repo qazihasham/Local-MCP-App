@@ -332,6 +332,26 @@ async def update_sse_tools():
         except Exception as e:
             logger.error(f"Failed to update SSE tools: {e}")
 
+# --- Hot Reload Pattern for SSE MCP Server ---
+reload_lock = threading.Lock()
+
+async def reload_sse_server_tools():
+    """Recreate the SSEMCPBridge, re-register all tools, and remount the Starlette app to expose new tools."""
+    global sse_mcp_bridge, app
+    with reload_lock:
+        # Create new SSEMCPBridge and re-register tools
+        new_bridge = SSEMCPBridge("MCP-Bridge-Server")
+        await new_bridge.initialize(bridge)
+        await new_bridge.update_tools()
+        # Remove old mount at root ('/') if exists
+        if hasattr(app, 'router'):
+            app.router.routes = [r for r in app.router.routes if not (hasattr(r, 'path') and r.path == '/' and hasattr(r, 'app'))]
+        # Mount new Starlette app
+        sse_starlette_app = create_sse_server(new_bridge.mcp)
+        app.mount("/", sse_starlette_app)
+        sse_mcp_bridge = new_bridge
+        logger.info("SSE MCP Bridge hot-reloaded with new tools.")
+
 # Lifespan manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -515,6 +535,7 @@ async def update_server(server_name: str, config: MCPServerConfig):
         last_update=time.strftime("%Y-%m-%d %H:%M:%S")
     )
     save_config()
+    await reload_sse_server_tools()  # Hot reload SSE tools
     return {"message": "Server updated successfully"}
 
 @app.post("/api/servers/{server_name}/start")
@@ -528,10 +549,9 @@ async def start_server(server_name: str, background_tasks: BackgroundTasks):
         try:
             logger.info(f"Starting server: {server_name}")
             await bridge.start_server(server_name, config)
-            # Wait for tools to be discovered
             await asyncio.sleep(3)
-            # Update SSE tools
             await update_sse_tools()
+            await reload_sse_server_tools()  # Hot reload SSE tools
             logger.info(f"Server {server_name} started and tools updated")
         except Exception as e:
             logger.error(f"Failed to start server {server_name}: {e}")
@@ -552,6 +572,7 @@ async def stop_server(server_name: str):
     
     # Update SSE tools
     await update_sse_tools()
+    await reload_sse_server_tools()  # Hot reload SSE tools
     
     return {"message": f"Server {server_name} stopped"}
 
@@ -570,6 +591,7 @@ async def delete_server(server_name: str):
     
     # Update SSE tools
     await update_sse_tools()
+    await reload_sse_server_tools()  # Hot reload SSE tools
     
     return {"message": f"Server {server_name} deleted"}
 
